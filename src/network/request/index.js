@@ -19,7 +19,7 @@ class ZwRequest {
       if (config.interceptors && config.interceptors.requestInterceptors) {
         config = config.interceptors.requestInterceptors(config)
       }
-      config.showLoading = config.showLoading ?? true
+      config.showLoading = config.showLoading ?? false
       if (config.showLoading) {
         loadingInstence = ElLoading.service({
           lock: true,

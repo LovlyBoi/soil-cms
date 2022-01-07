@@ -2,20 +2,35 @@
   <div class="not-found">
     <div class="wrapper">
       <div class="not-found-image">
-        <img src="../../assets/img/404.png" alt="404">
+        <img src="../../assets/img/404.png" alt="404" />
       </div>
       <div class="message">
         <h2>OOPS!</h2>
         <h3>404 Page Not Found</h3>
         <p>请检查输入的 URL 是否正确，或点击下方的按钮返回主页。</p>
-        <el-button type="primary" round>返回主页</el-button>
+        <el-button type="primary" round @click="backHandle">返回主页</el-button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-export default {};
+import { useRouter } from "vue-router";
+export default {
+  name: 'not-found',
+  setup() {
+    const router = useRouter()
+
+    function backHandle() {
+      router.replace({ path: '/main' })
+    }
+
+    return {
+      backHandle
+    }
+  }
+
+};
 </script>
 
 <style scoped lang="less">
