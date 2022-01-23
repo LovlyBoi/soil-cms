@@ -1,7 +1,3 @@
-// import { ref } from 'vue'
-import { alterSuggestValue, addSuggestValue } from '@/network/suggest'
-import message from '@/utils/message'
-
 const suggestTableConfig = [
   {
     prop: 'id',
@@ -63,6 +59,21 @@ const dialogFormRules = {
 const alterDialogConfig = {
   formItems: [
     {
+      prop: 'id',
+      label: 'ID',
+      disabled: true
+    },
+    {
+      prop: 'cropName',
+      label: '作物名',
+      disabled: true
+    },
+    {
+      prop: 'nameElement',
+      label: '元素名',
+      disabled: true
+    },
+    {
       prop: 'min_value',
       label: '最小值',
     },
@@ -76,17 +87,6 @@ const alterDialogConfig = {
     },
   ],
   rules: dialogFormRules,
-  async successFunction(newForm) {
-    const {code, msg} = await alterSuggestValue(newForm)
-    // console.log(result)
-    if(code !== 200) {
-      message('error', '修改失败')
-      message('error', msg)
-      console.log('修改失败', msg)
-      return
-    }
-    message('success', '修改成功！')
-  }
 }
 
 const addDialogConfig = {
@@ -149,17 +149,6 @@ const addDialogConfig = {
     },
   ],
   rules: dialogFormRules,
-  async successFunction(newForm) {
-    const {code, msg} = await addSuggestValue(newForm)
-    // console.log(result)
-    if(code !== 200) {
-      message('error', '添加失败')
-      message('error', msg)
-      console.log('添加失败', msg)
-      return
-    }
-    message('success', '添加成功！')
-  }
 }
 
 export {

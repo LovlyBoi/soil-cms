@@ -1,37 +1,44 @@
 <template>
   <div class="suggest">
-    <el-card class="wrapper" shadow="always">
-      <template #header>
-        <div class="header">
-          <h2>建议值管理</h2>
-          <div class="btn-table">
-            <el-button
-              type="text"
-              :icon="Refresh"
-              @click="refreshHandle"
-            ></el-button>
-            <el-button
-              class="add-value-btn"
-              type="primary"
-              size="small"
-              @click="addValueHandle"
-              >添加值</el-button
-            >
-          </div>
-        </div>
-        <dialog-form
-          ref="dialogRef"
-          :config="addDialogConfig"
-          @pleaseRefresh="refreshHandle"
-        ></dialog-form>
-      </template>
+    <main-card
+      title="建议值管理"
+      btn-name="添加值"
+      @click="showAddDialog"
+      @pleaseRefresh="refreshHandle"
+    >
+      <dialog-form
+        ref="addDialogRef"
+        :config="addDialogConfig"
+        @confirm="addValueConfirm"
+      ></dialog-form>
+
+      <dialog-form
+        ref="alterDialogRef"
+        :config="alterDialogConfig"
+        @confirm="alterValueConfirm"
+      ></dialog-form>
 
       <div class="data-table">
-        <suggest-table
-          ref="tableRef"
-          :curPageNum="curPageNum"
-          @tableRequestRefresh="refreshHandle"
-        ></suggest-table>
+        <data-table ref="tableRef" :table-data="tableData">
+          <el-table-column fixed="right" label="操作" width="120">
+            <template #default="scope">
+              <el-button
+                type="text"
+                size="small"
+                @click.prevent="alterRow(scope.row)"
+              >
+                修改
+              </el-button>
+              <el-button
+                type="text"
+                size="small"
+                @click.prevent="deleteRow(scope.row)"
+              >
+                删除
+              </el-button>
+            </template>
+          </el-table-column>
+        </data-table>
       </div>
       <div class="pagination">
         <el-pagination
@@ -43,35 +50,47 @@
         >
         </el-pagination>
       </div>
-    </el-card>
+    </main-card>
   </div>
 </template>
 
 <script>
 import { ref } from "vue";
-import { getTotalSuggest as getTotal } from "@/network/suggest";
-import { message } from "@/utils/message";
-import { addDialogConfig } from "./config";
-import dialogForm from "./dialog-form.vue";
-import suggestTable from "./suggest-table.vue";
+import {
+  getTotalSuggest as getTotal,
+  addSuggestValue,
+  deleteSuggestValue,
+  getSuggestData,
+  alterSuggestValue
+} from "@/network/suggest";
+import message from "@/utils/message";
+import { addDialogConfig, alterDialogConfig } from "./config";
+import { ElMessageBox } from "element-plus";
+import DialogForm from "../../components/dialog-form.vue";
+import DataTable from "../../components/data-table.vue";
+import MainCard from "../../components/main-card.vue";
 import { Refresh } from "@element-plus/icons-vue";
 
 export default {
   name: "suggest",
   components: {
-    suggestTable,
-    dialogForm,
+    DataTable,
+    DialogForm,
+    MainCard,
   },
   setup() {
     const totalNum = ref(0);
 
     const tableRef = ref(null);
 
-    const dialogRef = ref(null);
+    const tableData = ref([]);
+
+    const addDialogRef = ref(null);
+    const alterDialogRef = ref(null);
 
     const curPageNum = ref(1);
 
-    // 那全部建议数量
+    // 拿全部建议数量
     async function getTotalSuggest() {
       const { code, data } = await getTotal();
       if (code !== 200) {
@@ -84,30 +103,101 @@ export default {
     // 改变页码时子组件重新拉取数据
     function changePageHandle(newPageNum) {
       curPageNum.value = newPageNum;
-      tableRef.value.getSuggestHandle(newPageNum, 10);
+      getSuggestHandle(newPageNum, 10);
     }
 
-    // 添加值
-    function addValueHandle() {
-      dialogRef.value.showDialog();
+    function showAddDialog() {
+      addDialogRef.value.showDialog();
+    }
+    function showAlterDialog(row) {
+      alterDialogRef.value.showDialog(row);
     }
 
     function refreshHandle() {
-      tableRef.value.getSuggestHandle(curPageNum.value, 10);
+      getSuggestHandle(curPageNum.value, 10);
+    }
+
+    // 添加值
+    async function addValueConfirm(form) {
+      const { code, msg } = await addSuggestValue(form);
+      if (code !== 200) {
+        message("error", "添加失败");
+        message("error", msg);
+        console.log("添加失败", msg);
+        return;
+      }
+      message("success", "添加成功！");
+      refreshHandle();
+    }
+
+    async function alterValueConfirm(form) {
+      const { code, msg } = await alterSuggestValue(form);
+      // console.log(result)
+      if (code !== 200) {
+        message("error", "修改失败");
+        message("error", msg);
+        console.log("修改失败", msg);
+        return;
+      }
+      message("success", "修改成功！");
+      refreshHandle();
+    }
+
+    // 删除一行建议值
+    async function deleteRow(row) {
+      await ElMessageBox.confirm("确定要删除这条建议值吗？", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      });
+
+      const { code, msg } = await deleteSuggestValue(row.id);
+      console.log(code);
+      if (code !== 200) {
+        message("error", "删除失败");
+        message("error", msg);
+        console.log("删除失败", msg);
+        return;
+      }
+      refreshHandle();
+      message("success", "删除成功！");
+    }
+
+    // 修改建议值
+    function alterRow(row) {
+      showAlterDialog(row);
+    }
+
+    // 拿到对应页的建议值
+    async function getSuggestHandle(page, size) {
+      const { code, data } = await getSuggestData(page, size);
+      if (code !== 200) {
+        message("error", "获取建议值数据失败");
+        return;
+      }
+      tableData.value = data;
     }
 
     getTotalSuggest();
+    getSuggestHandle(1, 10);
 
     return {
       totalNum,
       tableRef,
-      dialogRef,
+      addDialogRef,
+      alterDialogRef,
       curPageNum,
       changePageHandle,
       refreshHandle,
-      addValueHandle,
+      showAddDialog,
       Refresh,
       addDialogConfig,
+      alterDialogConfig,
+      addValueConfirm,
+      alterValueConfirm,
+      deleteRow,
+      alterRow,
+      tableData,
     };
   },
 };
@@ -116,30 +206,6 @@ export default {
 <style scoped lang="less">
 .suggest {
   padding: 15px;
-
-  .wrapper {
-    .header {
-      display: flex;
-      justify-content: space-between;
-
-      .btn-table {
-        display: flex;
-        flex-direction: row-reverse;
-        padding: 0 15px;
-        align-items: center;
-
-        .add-value-btn {
-          margin-right: 10px;
-        }
-      }
-    }
-
-    h2 {
-      text-align: left;
-      font-size: 18px;
-      line-height: 40px;
-    }
-  }
 
   .pagination {
     margin-top: 15px;

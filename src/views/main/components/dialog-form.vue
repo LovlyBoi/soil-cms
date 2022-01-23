@@ -1,6 +1,6 @@
 <template>
   <div class="dialog-form">
-    <el-dialog v-model="dialogFormVisible" title="修改建议值">
+    <el-dialog v-model="visible" :title="config.title">
       <el-form :model="form" :rules="config.rules" ref="formRef">
         <el-form-item
           v-for="item in config.formItems"
@@ -33,7 +33,9 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogFormVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitAlter">确定</el-button>
+          <el-button type="primary" @click="confirmHandle"
+            >确定</el-button
+          >
         </span>
       </template>
     </el-dialog>
@@ -41,59 +43,49 @@
 </template>
 
 <script>
-import { ref } from "vue";
+import { ref, reactive } from "vue";
 
 export default {
   name: "dialog-form",
   props: {
     config: {
       type: Object,
+      required: true
     },
   },
-  emits: ["pleaseRefresh"],
-  setup(props, { emit }) {
-    const dialogFormVisible = ref(false);
+  emits: ["confirm"],
+  setup(_, { emit }) {
+    const visible = ref(false);
 
     const formRef = ref(null);
 
-    const form = ref({
-      id: "",
-      cropName: "",
-      min_value: "",
-      max_value: "",
-      name_element: "",
-      result: "",
-    });
+    let form = reactive({});
 
     // 展示弹窗
     function showDialog(payload) {
-      dialogFormVisible.value = true;
-      // console.log(payload);
-      if (payload) form.value = { ...payload };
+      visible.value = true;
+      // 如果有数据带进来，就添加到form中，展示的时候就可以带着数据了
+      if (payload) {
+        for(const key in payload) {
+          form[key] = payload[key]
+        }
+      }
     }
 
-    // 提交修改
-    function submitAlter() {
+    // 确定
+    function confirmHandle() {
       formRef.value?.validate((valid) => {
-        if (!valid) {
-          return;
-        }
+        if (!valid) return;
 
-        dialogFormVisible.value = false;
-        // 校验成功的话调用传入的回调函数
-        if (!props.config.successFunction) {
-          return;
-        }
-        props.config.successFunction(form.value).then(() => {
-          emit("pleaseRefresh");
-        });
+        emit("confirm", form);
+        visible.value = false;
       });
     }
 
     return {
-      dialogFormVisible,
+      visible,
       showDialog,
-      submitAlter,
+      confirmHandle,
       form,
       formRef,
     };
