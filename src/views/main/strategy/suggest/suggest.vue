@@ -19,7 +19,7 @@
       ></dialog-form>
 
       <div class="data-table">
-        <data-table ref="tableRef" :table-data="tableData">
+        <data-table :tableData="tableData" :tableConfig="suggestTableConfig">
           <el-table-column fixed="right" label="操作" width="120">
             <template #default="scope">
               <el-button
@@ -64,7 +64,7 @@ import {
   alterSuggestValue
 } from "@/network/suggest";
 import message from "@/utils/message";
-import { addDialogConfig, alterDialogConfig } from "./config";
+import { addDialogConfig, alterDialogConfig, suggestTableConfig } from "./config";
 import { ElMessageBox } from "element-plus";
 import DialogForm from "../../components/dialog-form.vue";
 import DataTable from "../../components/data-table.vue";
@@ -80,8 +80,6 @@ export default {
   },
   setup() {
     const totalNum = ref(0);
-
-    const tableRef = ref(null);
 
     const tableData = ref([]);
 
@@ -183,7 +181,6 @@ export default {
 
     return {
       totalNum,
-      tableRef,
       addDialogRef,
       alterDialogRef,
       curPageNum,
@@ -193,6 +190,7 @@ export default {
       Refresh,
       addDialogConfig,
       alterDialogConfig,
+      suggestTableConfig,
       addValueConfirm,
       alterValueConfirm,
       deleteRow,
